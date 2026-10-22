@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>loom — see the connections</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand"><span class="logo">l.</span>loom</div>
+  <nav>
+    <button class="nav" data-view="overview">Overview</button>
+    <button class="nav" data-view="explore">Explore Codebase</button>
+    <button class="nav" data-view="impact">Impact Analysis</button>
+    <button class="nav" data-view="risk">Risk Investigation</button>
+    <button class="nav" data-view="graph">Knowledge Graph</button>
+  </nav>
+  <div class="side-foot"><span class="dot"></span><div><strong>Local workspace</strong><small>Graph, Git and model run on this machine</small></div></div>
+</aside>
+
+<main>
+  <header class="top">
+    <div><p class="eyebrow" id="eyebrow"></p><h1 id="page-title"></h1></div>
+    <div class="badge-repo"><span class="dot"></span>{{ repo_name }}</div>
+  </header>
+
+  <section class="view" id="view-overview">
+    <div class="hero">
+      <h2>Every codebase has a story.<br><span>Let’s find the threads.</span></h2>
+      <p>See how a change travels through your project, what it might break, and what has actually been verified.</p>
+      <div class="actions">
+        <button class="btn primary" data-go="risk">Investigate a change</button>
+        <button class="btn" data-go="impact">Trace an impact</button>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><p>Graph nodes</p><h3>{{ "{:,}".format(node_count) }}</h3><small>Code entities mapped</small></div>
+      <div class="stat"><p>Relationships</p><h3>{{ "{:,}".format(edge_count) }}</h3><small>Connections discovered</small></div>
+      <div class="stat"><p>Local model</p><h3 class="small-h">qwen2.5-coder:3b</h3><small>Runs through Ollama</small></div>
+    </div>
+    <div class="card">
+      <h3>How loom investigates a change</h3>
+      <ol class="steps">
+        <li><b>Read the diff</b><span>Real Git changes, not a description.</span></li>
+        <li><b>Map to symbols</b><span>Changed lines become graph nodes.</span></li>
+        <li><b>Trace dependents</b><span>Follow edges to what relies on them.</span></li>
+        <li><b>Check rules</b><span>Deterministic findings, labelled VERIFIED FACT.</span></li>
+        <li><b>Explain locally</b><span>The model comments. It never decides.</span></li>
+        <li><b>Report honestly</b><span>Verified, inferred and unverified stay separate.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="view hidden" id="view-explore">
+    <div class="grid2">
+      <div class="card">
+        <p class="eyebrow">ASK YOUR CODEBASE</p>
+        <h3>What do you want to know?</h3>
+        <form id="explore-form">
+          <textarea id="question" rows="4" placeholder="e.g. How does user authentication work?" required></textarea>
+          <button class="btn primary" id="explore-btn" type="submit">Search the graph</button>
+        </form>
+        <p class="eyebrow gap">TRY ASKING</p>
+        <div class="chips">
+          <button class="chip" data-ask="How does user authentication work?">How does user authentication work?</button>
+          <button class="chip" data-ask="Which files handle job applications?">Which files handle job applications?</button>
+          <button class="chip" data-ask="What connects the frontend to the backend?">What connects the frontend to the backend?</button>
+        </div>
+      </div>
+      <div class="card"><p class="eyebrow">RESULTS · GRAPHIFY</p><div id="explore-out" class="out"><p class="placeholder">Ask a question to see relevant files, functions and relationships.</p></div></div>
+    </div>
+  </section>
+
+  <section class="view hidden" id="view-impact">
+    <div class="card">
+      <p class="eyebrow">IMPACT ANALYSIS</p>
+      <h3>What depends on this?</h3>
+      <form id="impact-form" class="inline">
+        <input id="impact-target" type="text" placeholder="peeldb/models.py::JobAlert   or   backend/api/v1/alerts/views.py" required>
+        <button class="btn primary" id="impact-btn" type="submit">Trace impact</button>
+      </form>
+      <div class="chips">
+        <button class="chip" data-target="peeldb/models.py::JobAlert">peeldb/models.py::JobAlert</button>
+        <button class="chip" data-target="backend/api/v1/alerts/views.py">backend/api/v1/alerts/views.py</button>
+        <button class="chip" data-target="peeldb/models.py::Skill">peeldb/models.py::Skill</button>
+      </div>
+      <p class="hint">Use <code>folder/file.py::Name</code> to pick one symbol when several share a name.</p>
+    </div>
+    <div class="card"><div id="impact-out" class="out"><p class="placeholder">Pick a file or symbol to see what depends on it.</p></div></div>
+  </section>
+
+  <section class="view hidden" id="view-risk">
+    <div class="card">
+      <p class="eyebrow">RISK INVESTIGATION</p>
+      <h3>What might this change break?</h3>
+      <form id="risk-form">
+        <div class="seg">
+          <label><input type="radio" name="mode" value="working" checked><span>Uncommitted changes</span></label>
+          <label><input type="radio" name="mode" value="commits"><span>Between two commits</span></label>
+        </div>
+        <div class="inline hidden" id="commit-fields">
+          <input id="base" type="text" placeholder="base (e.g. main or a commit id)">
+          <input id="head" type="text" placeholder="head (e.g. HEAD)">
+        </div>
+        <label class="check"><input type="checkbox" id="run-model"> Add an AI explanation from the local model (slower, unverified)</label>
+        <button class="btn primary" id="risk-btn" type="submit">Investigate change</button>
+      </form>
+    </div>
+    <div class="card"><div id="risk-out" class="out"><p class="placeholder">Make a change in the repository, then investigate it here.</p></div></div>
+  </section>
+
+  <section class="view hidden" id="view-graph">
+    <div class="card flush">
+      <div class="bar"><p class="eyebrow">GRAPHIFY INTERACTIVE GRAPH</p><a class="link" href="/graph" target="_blank" rel="noopener">Open in a new tab ↗</a></div>
+      <iframe id="graph-frame" data-src="/graph" title="Knowledge graph"></iframe>
+    </div>
+  </section>
+
+  <footer>loom / See the connections. Know what might break.</footer>
+</main>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

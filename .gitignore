@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Target repository analyzed by Loom
+opensource-job-portal/
+
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# Generated files and logs
+*.log
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# Temporary development scripts
+patch_ai.py
+patch_diff_mapper.py
+patch_loom_graph.py
