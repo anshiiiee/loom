@@ -31,3 +31,4 @@ credentials.json
 patch_ai.py
 patch_diff_mapper.py
 patch_loom_graph.py
+frontend-backup/

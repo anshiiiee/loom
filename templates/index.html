@@ -1,124 +1,300 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>loom — see the connections</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f6f5f0">
+  <meta name="description" content="Loom maps code relationships, traces change impact, and investigates what might break.">
+  <title>loom — see the connections</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
-<aside class="sidebar">
-  <div class="brand"><span class="logo">l.</span>loom</div>
-  <nav>
-    <button class="nav" data-view="overview">Overview</button>
-    <button class="nav" data-view="explore">Explore Codebase</button>
-    <button class="nav" data-view="impact">Impact Analysis</button>
-    <button class="nav" data-view="risk">Risk Investigation</button>
-    <button class="nav" data-view="graph">Knowledge Graph</button>
-  </nav>
-  <div class="side-foot"><span class="dot"></span><div><strong>Local workspace</strong><small>Graph, Git and model run on this machine</small></div></div>
-</aside>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a href="#overview" class="brand" aria-label="loom home">
+        <span class="brand-mark">l</span>
+        <span>loom<span class="brand-period">.</span></span>
+      </a>
 
-<main>
-  <header class="top">
-    <div><p class="eyebrow" id="eyebrow"></p><h1 id="page-title"></h1></div>
-    <div class="badge-repo"><span class="dot"></span>{{ repo_name }}</div>
-  </header>
+      <div class="sidebar-label">WORKSPACE</div>
 
-  <section class="view" id="view-overview">
-    <div class="hero">
-      <h2>Every codebase has a story.<br><span>Let’s find the threads.</span></h2>
-      <p>See how a change travels through your project, what it might break, and what has actually been verified.</p>
-      <div class="actions">
-        <button class="btn primary" data-go="risk">Investigate a change</button>
-        <button class="btn" data-go="impact">Trace an impact</button>
-      </div>
-    </div>
-    <div class="stats">
-      <div class="stat"><p>Graph nodes</p><h3>{{ "{:,}".format(node_count) }}</h3><small>Code entities mapped</small></div>
-      <div class="stat"><p>Relationships</p><h3>{{ "{:,}".format(edge_count) }}</h3><small>Connections discovered</small></div>
-      <div class="stat"><p>Local model</p><h3 class="small-h">qwen2.5-coder:3b</h3><small>Runs through Ollama</small></div>
-    </div>
-    <div class="card">
-      <h3>How loom investigates a change</h3>
-      <ol class="steps">
-        <li><b>Read the diff</b><span>Real Git changes, not a description.</span></li>
-        <li><b>Map to symbols</b><span>Changed lines become graph nodes.</span></li>
-        <li><b>Trace dependents</b><span>Follow edges to what relies on them.</span></li>
-        <li><b>Check rules</b><span>Deterministic findings, labelled VERIFIED FACT.</span></li>
-        <li><b>Explain locally</b><span>The model comments. It never decides.</span></li>
-        <li><b>Report honestly</b><span>Verified, inferred and unverified stay separate.</span></li>
-      </ol>
-    </div>
-  </section>
+      <nav class="navigation" aria-label="Main navigation">
+        <button class="nav-item active" data-view="overview">
+          <span class="nav-icon">◫</span> Overview
+        </button>
+        <button class="nav-item" data-view="explore">
+          <span class="nav-icon">⌕</span> Explore codebase
+        </button>
+        <button class="nav-item" data-view="impact">
+          <span class="nav-icon">↗</span> Impact analysis
+        </button>
+        <button class="nav-item" data-view="risk">
+          <span class="nav-icon">◎</span> Risk investigation
+        </button>
+        <button class="nav-item" data-view="graph">
+          <span class="nav-icon">⌘</span> Knowledge graph
+        </button>
+      </nav>
 
-  <section class="view hidden" id="view-explore">
-    <div class="grid2">
-      <div class="card">
-        <p class="eyebrow">ASK YOUR CODEBASE</p>
-        <h3>What do you want to know?</h3>
-        <form id="explore-form">
-          <textarea id="question" rows="4" placeholder="e.g. How does user authentication work?" required></textarea>
-          <button class="btn primary" id="explore-btn" type="submit">Search the graph</button>
-        </form>
-        <p class="eyebrow gap">TRY ASKING</p>
-        <div class="chips">
-          <button class="chip" data-ask="How does user authentication work?">How does user authentication work?</button>
-          <button class="chip" data-ask="Which files handle job applications?">Which files handle job applications?</button>
-          <button class="chip" data-ask="What connects the frontend to the backend?">What connects the frontend to the backend?</button>
+      <div class="sidebar-bottom">
+        <div class="status-dot"></div>
+        <div>
+          <div class="sidebar-status">Local workspace</div>
+          <div class="sidebar-substatus">Evidence-first analysis</div>
         </div>
       </div>
-      <div class="card"><p class="eyebrow">RESULTS · GRAPHIFY</p><div id="explore-out" class="out"><p class="placeholder">Ask a question to see relevant files, functions and relationships.</p></div></div>
-    </div>
-  </section>
+    </aside>
 
-  <section class="view hidden" id="view-impact">
-    <div class="card">
-      <p class="eyebrow">IMPACT ANALYSIS</p>
-      <h3>What depends on this?</h3>
-      <form id="impact-form" class="inline">
-        <input id="impact-target" type="text" placeholder="peeldb/models.py::JobAlert   or   backend/api/v1/alerts/views.py" required>
-        <button class="btn primary" id="impact-btn" type="submit">Trace impact</button>
-      </form>
-      <div class="chips">
-        <button class="chip" data-target="peeldb/models.py::JobAlert">peeldb/models.py::JobAlert</button>
-        <button class="chip" data-target="backend/api/v1/alerts/views.py">backend/api/v1/alerts/views.py</button>
-        <button class="chip" data-target="peeldb/models.py::Skill">peeldb/models.py::Skill</button>
-      </div>
-      <p class="hint">Use <code>folder/file.py::Name</code> to pick one symbol when several share a name.</p>
-    </div>
-    <div class="card"><div id="impact-out" class="out"><p class="placeholder">Pick a file or symbol to see what depends on it.</p></div></div>
-  </section>
-
-  <section class="view hidden" id="view-risk">
-    <div class="card">
-      <p class="eyebrow">RISK INVESTIGATION</p>
-      <h3>What might this change break?</h3>
-      <form id="risk-form">
-        <div class="seg">
-          <label><input type="radio" name="mode" value="working" checked><span>Uncommitted changes</span></label>
-          <label><input type="radio" name="mode" value="commits"><span>Between two commits</span></label>
+    <main class="main-content">
+      <header class="topbar">
+        <div class="breadcrumb">Workspace <span>/</span> <strong id="breadcrumb-current">Overview</strong></div>
+        <div class="topbar-right">
+          <span class="local-badge"><span class="status-dot"></span> LOCAL</span>
+          <span class="topbar-version">loom / 01</span>
         </div>
-        <div class="inline hidden" id="commit-fields">
-          <input id="base" type="text" placeholder="base (e.g. main or a commit id)">
-          <input id="head" type="text" placeholder="head (e.g. HEAD)">
+      </header>
+
+      <!-- OVERVIEW -->
+      <section class="view" id="view-overview">
+        <div class="hero">
+          <div class="eyebrow"><span class="eyebrow-line"></span> CODEBASE INTELLIGENCE</div>
+          <h1>See the connections.<br><span>Know what might break.</span></h1>
+          <p class="hero-description">
+            Code rarely breaks in isolation. loom maps the relationships in your
+            repository so you can trace changes, uncover dependencies, and investigate risk
+            before it becomes a problem.
+          </p>
+          <div class="hero-actions">
+            <button class="button button-primary" data-go="risk">Investigate changes <span>↗</span></button>
+            <button class="button button-secondary" data-go="explore">Explore codebase <span>→</span></button>
+          </div>
+          <div class="hero-note"><span class="status-dot"></span> Built around code evidence, not confident guesses.</div>
         </div>
-        <label class="check"><input type="checkbox" id="run-model"> Add an AI explanation from the local model (slower, unverified)</label>
-        <button class="btn primary" id="risk-btn" type="submit">Investigate change</button>
-      </form>
-    </div>
-    <div class="card"><div id="risk-out" class="out"><p class="placeholder">Make a change in the repository, then investigate it here.</p></div></div>
-  </section>
 
-  <section class="view hidden" id="view-graph">
-    <div class="card flush">
-      <div class="bar"><p class="eyebrow">GRAPHIFY INTERACTIVE GRAPH</p><a class="link" href="/graph" target="_blank" rel="noopener">Open in a new tab ↗</a></div>
-      <iframe id="graph-frame" data-src="/graph" title="Knowledge graph"></iframe>
-    </div>
-  </section>
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">YOUR REPOSITORY</div>
+            <h2>At a glance</h2>
+          </div>
+          <span class="section-note">Live workspace snapshot</span>
+        </div>
 
-  <footer>loom / See the connections. Know what might break.</footer>
-</main>
-<script src="{{ url_for('static', filename='script.js') }}"></script>
+        <div class="stats-grid">
+          <article class="stat-card">
+            <div class="stat-top"><span>Repository</span><span class="stat-icon">⌘</span></div>
+            <div class="stat-value stat-repo">{{ repo_name }}</div>
+            <div class="stat-caption">Currently loaded codebase</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-top"><span>Graph nodes</span><span class="stat-icon">◉</span></div>
+            <div class="stat-value">{{ node_count }}</div>
+            <div class="stat-caption">Represented code entities</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-top"><span>Relationships</span><span class="stat-icon">⌁</span></div>
+            <div class="stat-value">{{ edge_count }}</div>
+            <div class="stat-caption">Connections between entities</div>
+          </article>
+        </div>
+
+        <div class="section-heading process-heading">
+          <div>
+            <div class="eyebrow">HOW LOOM WORKS</div>
+            <h2>From a change to a clearer picture.</h2>
+          </div>
+        </div>
+
+        <div class="process-grid">
+          <article class="process-card">
+            <span class="process-number">01</span>
+            <div class="process-icon">⌘</div>
+            <h3>Map the code</h3>
+            <p>Build a connected view of the repository and its important relationships.</p>
+            <button class="text-link" data-go="graph">View knowledge graph <span>→</span></button>
+          </article>
+          <article class="process-card">
+            <span class="process-number">02</span>
+            <div class="process-icon">↗</div>
+            <h3>Trace the impact</h3>
+            <p>Follow dependencies to understand which parts of the system a change may affect.</p>
+            <button class="text-link" data-go="impact">Trace a dependency <span>→</span></button>
+          </article>
+          <article class="process-card">
+            <span class="process-number">03</span>
+            <div class="process-icon">◎</div>
+            <h3>Investigate risk</h3>
+            <p>Connect changed files to relevant evidence, possible failure points, and test coverage.</p>
+            <button class="text-link" data-go="risk">Run an investigation <span>→</span></button>
+          </article>
+        </div>
+
+        <div class="principle-banner">
+          <div class="principle-mark">“</div>
+          <div>
+            <div class="eyebrow">THE LOOM PRINCIPLE</div>
+            <p>Show the connection. Show the evidence. Be honest about what is still unknown.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- EXPLORE -->
+      <section class="view hidden" id="view-explore">
+        <div class="page-intro">
+          <div class="eyebrow"><span class="eyebrow-line"></span> ASK YOUR CODEBASE</div>
+          <h1>Explore <span>the unknown.</span></h1>
+          <p>Ask a question about your repository. loom will use the available code knowledge and evidence to help you investigate.</p>
+        </div>
+
+        <div class="workspace-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div><div class="eyebrow">01 / QUESTION</div><h2>What are you looking for?</h2></div>
+              <span class="panel-symbol">⌕</span>
+            </div>
+            <form id="explore-form">
+              <label for="question">Your question</label>
+              <textarea id="question" rows="4" placeholder="How does authentication work in this repository?" required></textarea>
+              <div class="suggestions">
+                <button type="button" class="suggestion" data-ask="How does authentication work?">Authentication flow</button>
+                <button type="button" class="suggestion" data-ask="Which modules depend on the main application entry point?">Module dependencies</button>
+                <button type="button" class="suggestion" data-ask="Where are the tests and what do they cover?">Test coverage</button>
+              </div>
+              <button class="button button-primary button-full" id="explore-btn" type="submit">Explore codebase <span>→</span></button>
+            </form>
+          </section>
+
+          <section class="panel result-panel">
+            <div class="panel-heading">
+              <div><div class="eyebrow">02 / FINDINGS</div><h2>Investigation results</h2></div>
+              <span class="result-indicator"></span>
+            </div>
+            <div class="result-placeholder" id="explore-out" aria-live="polite">
+              <div class="placeholder-icon">⌕</div>
+              <h3>Start with a question.</h3>
+              <p>Results will appear here once the investigation completes.</p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- IMPACT -->
+      <section class="view hidden" id="view-impact">
+        <div class="page-intro">
+          <div class="eyebrow"><span class="eyebrow-line"></span> DEPENDENCY ANALYSIS</div>
+          <h1>Follow the <span>ripple.</span></h1>
+          <p>Start with a file or code entity and trace the connections that could make a change matter elsewhere.</p>
+        </div>
+
+        <div class="workspace-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div><div class="eyebrow">01 / TARGET</div><h2>Choose a starting point</h2></div>
+              <span class="panel-symbol">↗</span>
+            </div>
+            <form id="impact-form">
+              <label for="impact-target">File or code entity</label>
+              <input id="impact-target" type="text" placeholder="e.g. app.py or UserService" required>
+              <p class="field-help">Use a name or path that exists in the loaded repository.</p>
+              <button class="button button-primary button-full" id="impact-btn" type="submit">Trace impact <span>→</span></button>
+            </form>
+          </section>
+
+          <section class="panel result-panel">
+            <div class="panel-heading">
+              <div><div class="eyebrow">02 / CONNECTIONS</div><h2>Impact findings</h2></div>
+              <span class="result-indicator"></span>
+            </div>
+            <div class="result-placeholder" id="impact-out" aria-live="polite">
+              <div class="placeholder-icon">↗</div>
+              <h3>Nothing traced yet.</h3>
+              <p>Enter a target to see the dependencies and evidence available for it.</p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- RISK -->
+      <section class="view hidden" id="view-risk">
+        <div class="page-intro">
+          <div class="eyebrow"><span class="eyebrow-line"></span> CHANGE INVESTIGATION</div>
+          <h1>Find what <span>could break.</span></h1>
+          <p>Investigate a working-tree change or compare two Git revisions. loom connects changed code to known dependencies and evidence.</p>
+        </div>
+
+        <div class="workspace-grid risk-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div><div class="eyebrow">01 / SCOPE</div><h2>Define the change</h2></div>
+              <span class="panel-symbol">◎</span>
+            </div>
+            <form id="risk-form">
+              <div class="field-group">
+                <label>Investigation mode</label>
+                <div class="radio-options">
+                  <label class="radio-card">
+                    <input type="radio" name="mode" value="working" checked>
+                    <span><strong>Working tree</strong><small>Uncommitted local changes</small></span>
+                  </label>
+                  <label class="radio-card">
+                    <input type="radio" name="mode" value="commits">
+                    <span><strong>Git revisions</strong><small>Compare a base and a head</small></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="commit-grid hidden" id="commit-fields">
+                <div><label for="base">Base revision</label><input id="base" type="text" placeholder="main"></div>
+                <div><label for="head">Head revision</label><input id="head" type="text" placeholder="HEAD"></div>
+              </div>
+
+              <label class="checkbox-row">
+                <input type="checkbox" id="run-model">
+                <span><strong>Include AI commentary</strong><small>Optional interpretation of available evidence. Not a substitute for test execution.</small></span>
+              </label>
+
+              <button class="button button-primary button-full" id="risk-btn" type="submit">Investigate changes <span>→</span></button>
+              <p class="form-footnote">The investigation reports what the available evidence supports. It does not claim to prove that a change is safe.</p>
+            </form>
+          </section>
+
+          <section class="panel result-panel">
+            <div class="panel-heading">
+              <div><div class="eyebrow">02 / INVESTIGATION</div><h2>Risk report</h2></div>
+              <span class="result-indicator"></span>
+            </div>
+            <div class="result-placeholder" id="risk-out" aria-live="polite">
+              <div class="placeholder-icon">◎</div>
+              <h3>Ready when you are.</h3>
+              <p>Choose a scope and start an investigation. Findings and evidence will appear here.</p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- GRAPH -->
+      <section class="view hidden" id="view-graph">
+        <div class="page-intro">
+          <div class="eyebrow"><span class="eyebrow-line"></span> REPOSITORY MAP</div>
+          <h1>See how it <span>connects.</span></h1>
+          <p>Explore the knowledge graph generated from the loaded repository.</p>
+        </div>
+        <section class="panel graph-panel">
+          <div class="panel-heading">
+            <div><div class="eyebrow">CODE RELATIONSHIPS</div><h2>Knowledge graph</h2></div>
+            <span class="graph-live"><span class="status-dot"></span> LOCAL GRAPH</span>
+          </div>
+          <iframe id="graph-frame" title="loom knowledge graph" loading="lazy"></iframe>
+        </section>
+      </section>
+
+      <footer class="footer">
+        <span>loom<span class="brand-period">.</span> &nbsp; Code is connected. Risk is too.</span>
+        <span>Evidence over assumptions.</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
